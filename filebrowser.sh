@@ -37,25 +37,25 @@ function _install() {
 
     app_port_http=$(_port 10001 20000)
 
-    mkdir -p "$HOME/bin"
+    mkdir -p "$HOME/.local/bin"
     mkdir -p "$HOME/.config/Filebrowser"
 
     wget -O "$HOME/filebrowser.tar.gz" "$(curl -sNL https://api.github.com/repos/filebrowser/filebrowser/releases/latest | grep -Po 'ht(.*)linux-amd64(.*)gz')" >> "$log" 2>&1
-    tar -xvzf "$HOME/filebrowser.tar.gz" --exclude LICENSE --exclude README.md --exclude CHANGELOG.md -C "$HOME/bin" >> "$log" 2>&1
+    tar -xvzf "$HOME/filebrowser.tar.gz" --exclude LICENSE --exclude README.md --exclude CHANGELOG.md -C "$HOME/.local/bin" >> "$log" 2>&1
 
     rm -f "$HOME/filebrowser.tar.gz" >> "$log" 2>&1
     echo "Initialising database and configuring Filebrowser"
     create_self_ssl "${username}"
 
-    "$HOME/bin/filebrowser" config init -d "$HOME/.config/Filebrowser/filebrowser.db" >> "$log" 2>&1
+    "$HOME/.local/bin/filebrowser" config init -d "$HOME/.config/Filebrowser/filebrowser.db" >> "$log" 2>&1
 
-    "$HOME/bin/filebrowser" config set -t "$HOME/.ssl/${username}-self-signed.crt" -k "$HOME/.ssl/${username}-self-signed.key" -d "$HOME/.config/Filebrowser/filebrowser.db" >> "$log" 2>&1
-    "$HOME/bin/filebrowser" config set -a 0.0.0.0 -p "${app_port_http}" -l "$HOME/.config/Filebrowser/filebrowser.log" -d "$HOME/.config/Filebrowser/filebrowser.db" >> "$log" 2>&1
-    "$HOME/bin/filebrowser" users add "${username}" "${password}" --perm.admin -d "$HOME/.config/Filebrowser/filebrowser.db" >> "$log" 2>&1
+    "$HOME/.local/bin/filebrowser" config set -t "$HOME/.ssl/${username}-self-signed.crt" -k "$HOME/.ssl/${username}-self-signed.key" -d "$HOME/.config/Filebrowser/filebrowser.db" >> "$log" 2>&1
+    "$HOME/.local/bin/filebrowser" config set -a 0.0.0.0 -p "${app_port_http}" -l "$HOME/.config/Filebrowser/filebrowser.log" -d "$HOME/.config/Filebrowser/filebrowser.db" >> "$log" 2>&1
+    "$HOME/.local/bin/filebrowser" users add "${username}" "${password}" --perm.admin -d "$HOME/.config/Filebrowser/filebrowser.db" >> "$log" 2>&1
 
-    chown "${username}.${username}" -R "$HOME/bin" > /dev/null 2>&1
+    chown "${username}.${username}" -R "$HOME/.local/bin" > /dev/null 2>&1
     chown "${username}.${username}" -R "$HOME/.config" > /dev/null 2>&1
-    chmod 700 "$HOME/bin/filebrowser" > /dev/null 2>&1
+    chmod 700 "$HOME/.local/bin/filebrowser" > /dev/null 2>&1
     mkdir -p "$HOME/.config/systemd/user"
     cat > "$HOME/.config/systemd/user/filebrowser.service" <<- SERVICE
 [Unit]
@@ -65,7 +65,7 @@ After=network.target
 UMask=002
 Type=simple
 WorkingDirectory=$HOME
-ExecStart=$HOME/bin/filebrowser -d $HOME/.config/Filebrowser/filebrowser.db
+ExecStart=$HOME/.local/bin/filebrowser -d $HOME/.config/Filebrowser/filebrowser.db
 TimeoutStopSec=20
 KillMode=process
 Restart=always
@@ -84,18 +84,18 @@ function _upgrade() {
     echo "Stopping Filebrowser"
     systemctl --user stop filebrowser
     echo "Backing up Filebrowser"
-    mv $HOME/bin/filebrowser $HOME/bin/filebrowser.bak
+    mv $HOME/.local/bin/filebrowser $HOME/.local/bin/filebrowser.bak
     echo "Downloading new release"
     wget -O "$HOME/filebrowser.tar.gz" "$(curl -sNL https://api.github.com/repos/filebrowser/filebrowser/releases/latest | grep -Po 'ht(.*)linux-amd64(.*)gz')" >> "$log" 2>&1
     echo "Extracting new release"
-    tar -xvzf "$HOME/filebrowser.tar.gz" --exclude LICENSE --exclude README.md --exclude CHANGELOG.md -C "$HOME/bin" >> "$log" 2>&1
+    tar -xvzf "$HOME/filebrowser.tar.gz" --exclude LICENSE --exclude README.md --exclude CHANGELOG.md -C "$HOME/.local/bin" >> "$log" 2>&1
     rm -f "$HOME/filebrowser.tar.gz" >> "$log" 2>&1
-    chmod 700 "$HOME/bin/filebrowser"
-    if [[ -f $HOME/bin/filebrowser ]]; then
-        rm $HOME/bin/filebrowser.bak
+    chmod 700 "$HOME/.local/bin/filebrowser"
+    if [[ -f $HOME/.local/bin/filebrowser ]]; then
+        rm $HOME/.local/bin/filebrowser.bak
     else
         echo "Something went wrong during the upgrade, reverting changes"
-        mv $HOME/bin/filebrowser.bak $HOME/bin/filebrowser
+        mv $HOME/.local/bin/filebrowser.bak $HOME/.local/bin/filebrowser
     fi
     echo "Restarting Filebrowser"
     systemctl restart filebrowser
